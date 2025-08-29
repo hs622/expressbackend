@@ -1,0 +1,6 @@
+*.env
+.enn
+
+
+./node_modules
+./dist
