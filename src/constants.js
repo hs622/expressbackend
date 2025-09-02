@@ -1,1 +1,1 @@
-export const DatabaseName = "mongoCluster";
+export const DatabaseName = "express_server_db";

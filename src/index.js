@@ -4,6 +4,7 @@ import { app } from "./app.js";
 
 // new way to implement
 dotenv.config({
+  path: "./.env",
   debug: true,
 });
 
