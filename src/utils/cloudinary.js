@@ -3,23 +3,27 @@ import fs from "fs";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_NAME,
-  cloud_key: process.env.CLOUDINARY_KEY,
-  cloud_secret: process.env.CLOUDINARY_SECRET,
+  api_key: process.env.CLOUDINARY_KEY,
+  api_secret: process.env.CLOUDINARY_SECRET,
 });
 
 const uploadOnCloudinary = async (localFilePath) => {
+  console.log(cloudinary.config());
   try {
     if (!localFilePath) return null;
 
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
     });
-
-    console.log(`file is uploaded on cloudinary ${response.url}`);
+    fs.unlinkSync(localFilePath);
     return response;
   } catch (error) {
     // remove the locally saved temporary file as the upload operation got failed.
+    console.log("Error: ", error);
+
     fs.unlinkSync(localFilePath);
     return null;
   }
 };
+
+export { uploadOnCloudinary };
