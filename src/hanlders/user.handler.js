@@ -243,6 +243,85 @@ const updateCurrentPassword = asyncHandler(async (req, res) => {
   }
 });
 
+const fetchCurrentUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "current user fetched successfully."));
+});
+
+const updateUsername = asyncHandler(async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    if (!username.trim()) {
+      throw new ApiError(401, "Invalid username.");
+    }
+
+    const usernameExist = await User.findOne({
+      username,
+    });
+
+    if (usernameExist) {
+      throw new ApiError(401, "Username already taken.");
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        username: username.toLowerCase().trim(),
+      },
+      { new: true, validateBeforeSave: false }
+    ).select("-password -refreshToken");
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, updatedUser, "username updated successfully.")
+      );
+  } catch (error) {
+    throw new ApiError(
+      401,
+      error?.message || "something went wrong while updating username."
+    );
+  }
+});
+
+const updateProfileDetails = asyncHandler(async (req, res) => {
+  try {
+    const { firstName, lastName, dob, gender } = req.body;
+
+    if (!firstName.trim()) {
+      throw new ApiError(401, "first name field is required.");
+    }
+
+    if (!["Male", "Female", "Other"].includes(gender)) {
+      throw new ApiError(401, "invalid gender; options: Male, Female, Other.");
+    }
+
+    req.user.profile = {
+      firstName,
+      lastName,
+      dob,
+      gender,
+    };
+    await req.user.save({ validateBeforeSave: false });
+    const updatedUser = await User.findById(req.user?._id).select(
+      "-password -refreshToken"
+    );
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(201, updatedUser, "user profile update successfully.")
+      );
+  } catch (error) {
+    throw new ApiError(
+      401,
+      error?.message || "something went wrong while updating profile details."
+    );
+  }
+});
+
 export {
   resgisterUser,
   loginUser,
@@ -250,4 +329,6 @@ export {
   refreshAccessToken,
   fetchCurrentUser,
   updateCurrentPassword,
+  updateUsername,
+  updateProfileDetails,
 };

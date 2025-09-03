@@ -4,7 +4,9 @@ import {
   loginUser,
   logoutUser,
   refreshAccessToken,
-  resgisterUser
+  resgisterUser,
+  updateUsername,
+  updateProfileDetails,
 } from "../hanlders/user.handler.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -26,5 +28,7 @@ router.route("/login").post(loginUser);
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/reissue-access-token").post(verifyJWT, refreshAccessToken);
 router.route("/update-password").post(verifyJWT, updateCurrentPassword);
+router.route("/update-username").post(verifyJWT, updateUsername);
+router.route("/update-profile").post(verifyJWT, updateProfileDetails);
 
 export default router;
