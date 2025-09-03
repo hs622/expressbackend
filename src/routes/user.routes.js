@@ -1,9 +1,10 @@
 import { Router } from "express";
 import {
+  updateCurrentPassword,
   loginUser,
   logoutUser,
   refreshAccessToken,
-  resgisterUser,
+  resgisterUser
 } from "../hanlders/user.handler.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -19,9 +20,11 @@ router.route("/register").post(
   ]),
   resgisterUser
 );
-
 router.route("/login").post(loginUser);
+
+// secure routes
 router.route("/logout").post(verifyJWT, logoutUser);
-router.route("/refresh-token").post(verifyJWT, refreshAccessToken);
+router.route("/reissue-access-token").post(verifyJWT, refreshAccessToken);
+router.route("/update-password").post(verifyJWT, updateCurrentPassword);
 
 export default router;
