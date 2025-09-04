@@ -9,6 +9,7 @@ import {
   updateProfileDetails,
   updateAvatarImage,
   fetchCurrentUser,
+  updateContactDetails,
 } from "../hanlders/user.handler.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -24,7 +25,8 @@ router.route("/get-current-user").post(verifyJWT, fetchCurrentUser);
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/update-password").post(verifyJWT, updateCurrentPassword);
 router.route("/update-username").post(verifyJWT, updateUsername);
-router.route("/update-profile").post(verifyJWT, updateProfileDetails); 
+router.route("/update-profile").post(verifyJWT, updateProfileDetails);
+router.route("/update-contact").post(verifyJWT, updateContactDetails);
 router
   .route("/update-avatar")
   .post(verifyJWT, upload.single("avatar"), updateAvatarImage);

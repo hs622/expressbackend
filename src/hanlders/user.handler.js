@@ -329,8 +329,50 @@ const updateProfileDetails = asyncHandler(async (req, res) => {
   }
 });
 
-const updateAvatarImage = asyncHandler(async (req, res) => {
+const updateContactDetails = asyncHandler(async (req, res) => {
+  try {
+    const { countryCode, number, defaultNumber } = req.body;
 
+    if (!countryCode.trim()) {
+      throw new ApiError(401, "country code field is required.");
+    }
+
+    if (!(number.toString().length > 6 && number.toString().length < 15)) {
+      throw new ApiError(401, "invalid number");
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $set: {
+          "contact.countryCode": countryCode,
+          "contact.number": number,
+          "contact.default": defaultNumber,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          updatedUser,
+          "contact information is updated successfully."
+        )
+      );
+  } catch (error) {
+    throw new ApiError(
+      401,
+      error?.message || "something went wrong while updating user information."
+    );
+  }
+});
+
+const updateAvatarImage = asyncHandler(async (req, res) => {
   try {
     if (!req.file) {
       throw new ApiError(400, "Avatar file is required");
@@ -378,6 +420,7 @@ export {
   fetchCurrentUser,
   updateCurrentPassword,
   updateUsername,
-  updateProfileDetails, 
+  updateProfileDetails,
+  updateContactDetails,
   updateAvatarImage,
 };
