@@ -2,7 +2,10 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  removePreviousAvatarImage,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 
 // Cookie setting
@@ -298,16 +301,20 @@ const updateProfileDetails = asyncHandler(async (req, res) => {
       throw new ApiError(401, "invalid gender; options: Male, Female, Other.");
     }
 
-    req.user.profile = {
-      firstName,
-      lastName,
-      dob,
-      gender,
-    };
-    await req.user.save({ validateBeforeSave: false });
-    const updatedUser = await User.findById(req.user?._id).select(
-      "-password -refreshToken"
-    );
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $set: {
+          "profile.firstName": firstName,
+          "profile.lastName": lastName,
+          "profile.dob": dob,
+          "profile.gender": gender,
+        },
+      },
+      {
+        new: true,
+      }
+    ).select("-password -refreshToken");
 
     return res
       .status(200)
@@ -322,6 +329,47 @@ const updateProfileDetails = asyncHandler(async (req, res) => {
   }
 });
 
+const updateAvatarImage = asyncHandler(async (req, res) => {
+
+  try {
+    if (!req.file) {
+      throw new ApiError(400, "Avatar file is required");
+    }
+
+    if (!(2048 * 1000 > req.file?.size)) {
+      // if a file is greater than 2MB.
+      throw new ApiError(401, "Too large file. max size is 2MB.");
+    }
+
+    const newAvatarPath = req.file.path;
+    const oldAvatarPath = req.user?.profile?.avatar;
+    const cloudinaryResponse = await uploadOnCloudinary(newAvatarPath);
+
+    if (oldAvatarPath) await removePreviousAvatarImage(oldAvatarPath);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $set: {
+          "profile.avatar": cloudinaryResponse?.url,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, updatedUser, "avatar updated successfully."));
+  } catch (error) {
+    throw new ApiError(
+      401,
+      error?.message || "something went wrong while updating avatar."
+    );
+  }
+});
+
 export {
   resgisterUser,
   loginUser,
@@ -330,5 +378,6 @@ export {
   fetchCurrentUser,
   updateCurrentPassword,
   updateUsername,
-  updateProfileDetails,
+  updateProfileDetails, 
+  updateAvatarImage,
 };
