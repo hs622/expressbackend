@@ -156,8 +156,8 @@ const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
       req.user._id,
       {
-        $set: {
-          refreshToken: undefined,
+        $unset: {
+          refreshToken: 1, // this will remove the value.
         },
       },
       { new: true }
@@ -541,8 +541,6 @@ const getWatchHistory = asyncHandler(async (req, res) => {
         },
       },
     ]);
-
-    console.log(user);
 
     res
       .status(200)
