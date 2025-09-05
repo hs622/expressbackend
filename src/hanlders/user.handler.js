@@ -7,6 +7,7 @@ import {
   uploadOnCloudinary,
 } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 // Cookie setting
 const cookieOptions = {
@@ -145,7 +146,7 @@ const loginUser = asyncHandler(async (req, res) => {
   } catch (error) {
     throw new ApiError(
       401,
-      error?.messahe || "something went wrong while login user."
+      error?.message || "something went wrong while login user."
     );
   }
 });
@@ -412,6 +413,67 @@ const updateAvatarImage = asyncHandler(async (req, res) => {
   }
 });
 
+const getWatchHistory = asyncHandler(async (req, res) => {
+  try {
+    const user = await User.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(req.user?._id),
+        },
+      },
+      {
+        $lookup: {
+          from: "vidoes",
+          localField: "watchHistory",
+          foreignField: "_id",
+          as: "watchHistory",
+          pipeline: [
+            // nested lookup.
+            {
+              $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
+                  {
+                    $project: {
+                      "profile.fullName": 1,
+                      "profile.avatar": 1,
+                      username: 1,
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              $addFields: {
+                owner: {
+                  $first: "$owner",
+                },
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    console.log(user);
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(200, user[0].watchHistory, "user watch history fetched successfully.")
+      );
+  } catch (error) {
+    throw new ApiError(
+      401,
+      error?.message ||
+        "something went wrong while fetching user watch history."
+    );
+  }
+});
+
 export {
   resgisterUser,
   loginUser,
@@ -423,4 +485,5 @@ export {
   updateProfileDetails,
   updateContactDetails,
   updateAvatarImage,
+  getWatchHistory,
 };
