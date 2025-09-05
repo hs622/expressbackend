@@ -413,6 +413,90 @@ const updateAvatarImage = asyncHandler(async (req, res) => {
   }
 });
 
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    if (!username.trim()) {
+      throw new ApiError(401, "username is missing.");
+    }
+
+    const channel = await User.aggregate([
+      {
+        $match: {
+          username: username?.toLowerCase(),
+        },
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "channel",
+          as: "subscribers",
+        },
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "subscriber",
+          as: "subscriberTo",
+        },
+      },
+      {
+        $addFields: {
+          subscriberCount: {
+            $size: "$subscribers",
+          },
+          subscribedToCount: {
+            $size: "$subscriberTo",
+          },
+          isSubscribed: {
+            // condition: Current user subscribed the channel or not.
+            $cond: {
+              if: {
+                // "in" function can check the value is exist or not; both in array and object.
+                $in: [req.user?._id, "$subscribers.subscriber"],
+              },
+              then: true, // return true // success case
+              else: false, // return false // fail case
+            },
+          },
+        },
+      },
+      {
+        // using projection function send specific data object to the user.
+        $project: {
+          username: 1,
+          email: 1,
+          subscriberCount: 1,
+          subscribedToCount: 1,
+          isSubscribed: 1,
+          "profile.avatar": 1,
+          "profile.firstName": 1,
+          "profile.lastName": 1,
+        },
+      },
+    ]);
+
+    if (!channel?.length) {
+      throw new ApiError(404, "Channnel doesn't exist.");
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, channel[0], "User channel fetched successfully.")
+      );
+  } catch (error) {
+    throw new ApiError(
+      401,
+      error?.message ||
+        "something went wrong while fetching channel profile infromation."
+    );
+  }
+});
+
 const getWatchHistory = asyncHandler(async (req, res) => {
   try {
     const user = await User.aggregate([
@@ -463,7 +547,11 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     res
       .status(200)
       .json(
-        new ApiResponse(200, user[0].watchHistory, "user watch history fetched successfully.")
+        new ApiResponse(
+          200,
+          user[0].watchHistory,
+          "user watch history fetched successfully."
+        )
       );
   } catch (error) {
     throw new ApiError(
@@ -485,5 +573,6 @@ export {
   updateProfileDetails,
   updateContactDetails,
   updateAvatarImage,
+  getUserChannelProfile,
   getWatchHistory,
 };
