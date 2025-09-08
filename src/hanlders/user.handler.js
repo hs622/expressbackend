@@ -59,18 +59,12 @@ const resgisterUser = asyncHandler(async (req, res) => {
       throw new ApiError(409, "User with email or username already exists.");
     }
 
-    // classical way of handling files.
-    if (
-      !(
-        req.files &&
-        Array.isArray(req.files.avatar) &&
-        req.files?.avatar?.length > 0
-      )
-    ) {
+    // classical way of handling file.
+    if (!req.file) {
       throw new ApiError(400, "Avatar file is required");
     }
 
-    const avatarLocalPath = req.files?.avatar[0]?.path;
+    const avatarLocalPath = req.file?.path;
     const cloudinaryResponse = await uploadOnCloudinary(avatarLocalPath);
 
     const user = await User.create({

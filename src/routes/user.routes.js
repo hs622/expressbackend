@@ -18,7 +18,7 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.route("/register").post(upload.fields("avatar"), resgisterUser);
+router.route("/register").post(upload.single("avatar"), resgisterUser);
 router.route("/login").post(loginUser);
 router.route("/reissue-access-token").post(refreshAccessToken);
 
